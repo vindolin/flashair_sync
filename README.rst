@@ -1,7 +1,13 @@
 flashair_sync
 -------------
 
-Simple directory syncer for flashair SD cards, used in 3D printers.
+Installation
+------------
+
+    pip install flashair_sync
+
+
+Simple directory syncer for Toshiba Flashair SD cards, used in 3D printers.
 
 Example usage
 -------------
