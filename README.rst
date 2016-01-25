@@ -8,6 +8,10 @@ Installation
 
     $ pip install flashair_sync
 
+    or under Windows:
+
+    C:\>py -m pip install flashair_sync
+
 
 Simple directory syncer for Toshiba Flashair SD cards, used in 3D printers.
 
@@ -18,6 +22,9 @@ Example usage
 
     $ flashair_sync /directory/with/x3g_files 192.168.178.70 x3g s3g
 
+    or under Windows:
+
+    $ py flashair_sync c:\directory\with\x3g_files 192.168.178.70 x3g s3g
 
 --help output
 -------------
