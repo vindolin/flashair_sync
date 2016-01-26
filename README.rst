@@ -32,7 +32,7 @@ Example usage
 
 .. code-block::
 
-    usage: __init__.py [-h] [-p POLL_INTERVAL]
+    usage: flashair_sync [-h] [-p POLL_INTERVAL] [-i]
                        directory_path flashair_address file_extensions
                        [file_extensions ...]
 
@@ -50,3 +50,6 @@ Example usage
       -h, --help            show this help message and exit
       -p POLL_INTERVAL, --poll_interval POLL_INTERVAL
                             How many seconds between directory polls.
+      -i, --initial_sync    Copy all files that are new or changed to the card on
+                            program start, also delete all files on the card which
+                            are not in the current directory.
