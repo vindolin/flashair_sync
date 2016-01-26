@@ -32,6 +32,21 @@ def send_file(name, size):
         print('done.\a')
 
 
+def get_remote_list():
+    result = {}
+    r = requests.get('{}/command.cgi?op=100&DIR=/'.format(url))
+    for line in list(r.text.strip().split('\r\n'))[1:]:
+        parts = line.split(',')
+        name = parts[1]
+        size = int(parts[2])
+        attr = int(parts[3])
+
+        if not attr & 16:  # not a directory
+            result[name] = size
+
+    return result
+
+
 def remove_file(name):
     print('removing {}'.format(name))
     delete_url = '{}?DEL={}'.format(upload_url, name)
@@ -47,20 +62,39 @@ def check_dir():
     files = []
     for name in os.listdir(args.directory_path):
         file_path = os.path.join(args.directory_path, name)
+
         if os.path.isfile(file_path):
             extension = os.path.splitext(file_path)[1]
+
             if args.file_extensions is None or extension in args.file_extensions:
                 files.append(name)
                 stat = os.stat(file_path)
-                if name not in cache or cache[name] != stat.st_mtime:
-                    cache[name] = stat.st_mtime
-                    if not first_run:
-                        send_file(name, stat.st_size)
 
+                if first_run:
+                    if args.initial_sync:
+                        # file is not on card or has different size
+                        if name not in initial_remote_list or initial_remote_list[name] != stat.st_size:
+                            send_file(name, stat.st_size)
+
+                    cache[name] = stat.st_mtime
+
+                else:
+                    # file is new or has changed
+                    if name not in cache or cache[name] != stat.st_mtime:
+                        send_file(name, stat.st_size)
+                        cache[name] = stat.st_mtime
+
+    # check for deleted files
     for name in list(cache.keys()):
         if name not in files:
             remove_file(name)
             del cache[name]
+
+    # check for remote files that are not in the current directory and delete them
+    if first_run and args.initial_sync:
+        for name, size in initial_remote_list.items():
+            if name not in cache:
+                remove_file(name)
 
 
 parser = argparse.ArgumentParser(description='Watch a directory for change/delete events to files and sync to flashair card (not recursive!).')
@@ -68,6 +102,7 @@ parser.add_argument('directory_path', help='The directory to watch for changes.'
 parser.add_argument('flashair_address', help='The address of your flashair card, eg. "192.168.178.41"')
 parser.add_argument('file_extensions', nargs='+', default=None, help='Only files that match one of these extensions get monitored.')
 parser.add_argument('-p', '--poll_interval', type=float, default=1, help='How many seconds between directory polls.')
+parser.add_argument('-i', '--initial_sync', action='store_true', default=False, help='Copy all files that are new or changed to the card on program start, also delete all files on the card which are not in the current directory. ')
 args = parser.parse_args()
 
 if args.file_extensions is not None:
@@ -75,6 +110,9 @@ if args.file_extensions is not None:
 
 url = 'http://{}'.format(args.flashair_address)
 upload_url = '{}/upload.cgi'.format(url)
+
+if args.initial_sync:
+    initial_remote_list = get_remote_list()
 
 while True:
     check_dir()
