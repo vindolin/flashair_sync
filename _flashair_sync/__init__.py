@@ -1,11 +1,14 @@
 #!/usr/bin/env python
-
 import requests
 import time
 import os
 import argparse
 from requests_toolbelt.multipart.encoder import MultipartEncoderMonitor
 from tqdm import tqdm
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
 
 cache = {}
 
@@ -17,9 +20,14 @@ def progress(bytes_read, pbar):
 
 
 def send_file(name, size):
-    encoder = MultipartEncoderMonitor.from_fields(
-        fields={'file': (name, open(os.path.join(args.directory_path, name), 'rb'))}
-    )
+    try:
+        with open(os.path.join(args.directory_path, name), 'rb') as file:
+            encoder = MultipartEncoderMonitor.from_fields(
+                fields={'file': (name, file)}
+            )
+    except UnicodeDecodeError:
+        exit('Oops, unicode filenames are not yet supported, please delete the file "{}" and try again. :('.format(name))
+
     progress.last_len = 0
     pbar = tqdm(total=encoder.len, leave=True, unit_scale=True, unit='B', miniters=1, desc='sending {}'.format(name))
     monitor = MultipartEncoderMonitor(encoder, lambda monitor: progress(monitor.bytes_read, pbar))
@@ -49,7 +57,7 @@ def get_remote_list():
 
 def remove_file(name):
     print('removing {}'.format(name))
-    delete_url = '{}?DEL={}'.format(upload_url, name)
+    delete_url = '{}?DEL={}'.format(upload_url, quote(name))
     r = requests.get(delete_url)
     if 'SUCCESS' not in r.text:
         print(r.text)
@@ -95,6 +103,7 @@ def check_dir():
         for name, size in initial_remote_list.items():
             if name not in cache:
                 remove_file(name)
+                del cache[name]
 
 
 parser = argparse.ArgumentParser(description='Watch a directory for change/delete events to files and sync to flashair card (not recursive!).')
