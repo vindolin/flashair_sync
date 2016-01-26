@@ -27,6 +27,8 @@ Example usage
 
     $ py flashair_sync c:\directory\with\x3g_files 192.168.178.70 x3g s3g
 
+    If you want to do an initial sycn to the card, add the -i switch.
+
 --help output
 -------------
 
@@ -49,7 +51,7 @@ Example usage
     optional arguments:
       -h, --help            show this help message and exit
       -p POLL_INTERVAL, --poll_interval POLL_INTERVAL
-                            How many seconds between directory polls.
+                            How many seconds between directory polls (default is 1).
       -i, --initial_sync    Copy all files that are new or changed to the card on
                             program start, also delete all files on the card which
                             are not in the current directory.

@@ -110,7 +110,7 @@ parser = argparse.ArgumentParser(description='Watch a directory for change/delet
 parser.add_argument('directory_path', help='The directory to watch for changes.')
 parser.add_argument('flashair_address', help='The address of your flashair card, eg. "192.168.178.41"')
 parser.add_argument('file_extensions', nargs='+', default=None, help='Only files that match one of these extensions get monitored.')
-parser.add_argument('-p', '--poll_interval', type=float, default=1, help='How many seconds between directory polls.')
+parser.add_argument('-p', '--poll_interval', type=float, default=1, help='How many seconds between directory polls (default is 1).')
 parser.add_argument('-i', '--initial_sync', action='store_true', default=False, help='Copy all files that are new or changed to the card on program start, also delete all files on the card which are not in the current directory. ')
 args = parser.parse_args()
 
