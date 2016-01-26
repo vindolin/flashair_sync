@@ -21,23 +21,23 @@ def progress(bytes_read, pbar):
 
 def send_file(name, size):
     try:
-        with open(os.path.join(args.directory_path, name), 'rb') as file:
-            encoder = MultipartEncoderMonitor.from_fields(
-                fields={'file': (name, file)}
-            )
+        encoder = MultipartEncoderMonitor.from_fields(
+            fields={'file': (name, open(os.path.join(args.directory_path, name), 'rb'))}
+        )
+
+        progress.last_len = 0
+        pbar = tqdm(total=encoder.len, leave=True, unit_scale=True, unit='B', miniters=1, desc='sending {}'.format(name))
+        monitor = MultipartEncoderMonitor(encoder, lambda monitor: progress(monitor.bytes_read, pbar))
+
+        r = requests.post(upload_url, data=monitor, headers={'Content-Type': monitor.content_type})
+        progress(size, pbar)
+        if 'Success' not in r.text:
+            print(r.text)
+        else:
+            print('done.\a')
+
     except UnicodeDecodeError:
         exit('Oops, unicode filenames are not yet supported, please delete the file "{}" and try again. :('.format(name))
-
-    progress.last_len = 0
-    pbar = tqdm(total=encoder.len, leave=True, unit_scale=True, unit='B', miniters=1, desc='sending {}'.format(name))
-    monitor = MultipartEncoderMonitor(encoder, lambda monitor: progress(monitor.bytes_read, pbar))
-
-    r = requests.post(upload_url, data=monitor, headers={'Content-Type': monitor.content_type})
-    progress(size, pbar)
-    if 'Success' not in r.text:
-        print(r.text)
-    else:
-        print('done.\a')
 
 
 def get_remote_list():
