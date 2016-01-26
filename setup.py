@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name='flashair_sync',
-    version='0.0.16',
+    version='0.0.17',
     author='Thomas Schüßler',
     author_email='vindolin@gmail.com',
     packages=['_flashair_sync'],

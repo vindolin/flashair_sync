@@ -54,4 +54,7 @@ Example usage
                             How many seconds between directory polls (default is 1).
       -i, --initial_sync    Copy all files that are new or changed to the card on
                             program start, also delete all files on the card which
-                            are not in the current directory.
+                            are not in the current directory.  Without this switch
+                            only files that are new/modified/deleted after the
+                            program start are synced.
+
