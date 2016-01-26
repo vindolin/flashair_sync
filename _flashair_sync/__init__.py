@@ -66,7 +66,9 @@ def remove_file(name):
 
 
 def check_dir():
-    first_run = len(cache) == 0
+    if not hasattr(check_dir, 'first_run'):
+        check_dir.first_run = True
+
     files = []
     for name in os.listdir(args.directory_path):
         file_path = os.path.join(args.directory_path, name)
@@ -78,7 +80,7 @@ def check_dir():
                 files.append(name)
                 stat = os.stat(file_path)
 
-                if first_run:
+                if check_dir.first_run:
                     if args.initial_sync:
                         # file is not on card or has different size
                         if name not in initial_remote_list or initial_remote_list[name] != stat.st_size:
@@ -99,11 +101,12 @@ def check_dir():
             del cache[name]
 
     # check for remote files that are not in the current directory and delete them
-    if first_run and args.initial_sync:
+    if check_dir.first_run and args.initial_sync:
         for name, size in initial_remote_list.items():
             if name not in cache:
                 remove_file(name)
-                del cache[name]
+
+    check_dir.first_run = False
 
 
 parser = argparse.ArgumentParser(description='Watch a directory for change/delete events to files and sync to flashair card (not recursive!).')
