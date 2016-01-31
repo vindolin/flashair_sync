@@ -37,12 +37,20 @@ def send_file(name, size):
             print('done.\a')
 
     except UnicodeDecodeError:
-        exit('Oops, unicode filenames are not yet supported, please delete the file "{}" and try again. :('.format(name))
+        print('Oops, there was a problem with the file "{}!\n Unicode filenames are not supported.'.format(name))
+        return
+    except requests.exceptions.ConnectionError:
+        exit("Oops, no response from your Flashair card at {}".format(upload_url))
 
 
 def get_remote_list():
     result = {}
-    r = requests.get('{}/command.cgi?op=100&DIR=/'.format(url))
+
+    try:
+        r = requests.get('{}/command.cgi?op=100&DIR=/'.format(url))
+    except requests.exceptions.ConnectionError:
+        exit("Oops, no response from your Flashair card at {}".format(url))
+
     for line in list(r.text.strip().split('\r\n'))[1:]:
         parts = line.split(',')
         name = parts[1]
@@ -103,8 +111,10 @@ def check_dir():
     # check for remote files that are not in the current directory and delete them
     if check_dir.first_run and args.initial_sync:
         for name, size in initial_remote_list.items():
+            extension = os.path.splitext(name)[1]
             if name not in cache:
-                remove_file(name)
+                if not args.file_extensions or extension in args.file_extensions:
+                    remove_file(name)
 
     check_dir.first_run = False
 
