@@ -1,9 +1,9 @@
 flashair_sync
 -------------
 
-Simple non recursive, one way directory sync for Toshiba Flashair SD cards.
+Simple non recursive, one way directory sync for Toshiba FlashAir SD cards.
 
-Syncs a local directory to the Flashair card. (create/modify/delete)
+Syncs a local directory to the FlashAir card. (create/modify/delete)
 
 Intended for use in a 3D printer.
 
