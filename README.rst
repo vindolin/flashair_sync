@@ -1,7 +1,12 @@
 flashair_sync
 -------------
 
-Simple one way directory syncer for Toshiba Flashair SD cards, used in 3D printers.
+Simple non recursive, one way directory sync for Toshiba Flashair SD cards.
+
+Syncs a local directory to the Flashair card. (create/modify/delete)
+
+Intended for use in a 3D printer.
+
 
 
 Installation
@@ -57,4 +62,9 @@ Example usage
                             are not in the current directory.  Without this switch
                             only files that are new/modified/deleted after the
                             program start are synced.
+
+Bugs
+----
+
+Does not yet support unicode filenames (problems with the Requests module).
 
