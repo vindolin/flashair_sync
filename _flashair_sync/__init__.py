@@ -84,7 +84,7 @@ def check_dir():
         if os.path.isfile(file_path):
             extension = os.path.splitext(file_path)[1]
 
-            if len(args.file_extensions) == 0 or extension in args.file_extensions:
+            if not args.file_extensions or extension in args.file_extensions:
                 files.append(name)
                 stat = os.stat(file_path)
 
@@ -108,7 +108,7 @@ def check_dir():
             remove_file(name)
             del cache[name]
 
-    # check for remote files that are not in the current directory and delete them
+    # on the first run, check for remote files that are not in the current directory and delete them
     if check_dir.first_run and args.initial_sync:
         for name, size in initial_remote_list.items():
             extension = os.path.splitext(name)[1]
