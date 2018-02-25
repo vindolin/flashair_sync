@@ -5,6 +5,9 @@ import os
 import argparse
 from requests_toolbelt.multipart.encoder import MultipartEncoderMonitor
 from tqdm import tqdm
+import shutil
+import tempfile
+
 try:
     from urllib.parse import quote
 except ImportError:
@@ -20,6 +23,11 @@ def progress(bytes_read, pbar):
 
 
 def send_file(name, size):
+    # if the file is still beeing written, this forces a wait
+    tmp_file = os.path.join(tempfile.gettempdir(), 'flashair_tmp')
+    shutil.copy(os.path.join(args.directory_path, name), tmp_file)
+    os.unlink(tmp_file)
+
     try:
         encoder = MultipartEncoderMonitor.from_fields(
             fields={'file': (name, open(os.path.join(args.directory_path, name), 'rb'))}
@@ -37,20 +45,12 @@ def send_file(name, size):
             print('done.\a')
 
     except UnicodeDecodeError:
-        print('Oops, there was a problem with the file "{}!\n Unicode filenames are not supported.'.format(name))
-        return
-    except requests.exceptions.ConnectionError:
-        exit("Oops, no response from your Flashair card at {}".format(upload_url))
+        exit('Oops, unicode filenames are not yet supported, please delete the file "{}" and try again. :('.format(name))
 
 
 def get_remote_list():
     result = {}
-
-    try:
-        r = requests.get('{}/command.cgi?op=100&DIR=/'.format(url))
-    except requests.exceptions.ConnectionError:
-        exit("Oops, no response from your Flashair card at {}".format(url))
-
+    r = requests.get('{}/command.cgi?op=100&DIR=/'.format(url))
     for line in list(r.text.strip().split('\r\n'))[1:]:
         parts = line.split(',')
         name = parts[1]
@@ -84,7 +84,7 @@ def check_dir():
         if os.path.isfile(file_path):
             extension = os.path.splitext(file_path)[1]
 
-            if not args.file_extensions or extension in args.file_extensions:
+            if args.file_extensions is None or extension in args.file_extensions:
                 files.append(name)
                 stat = os.stat(file_path)
 
@@ -108,13 +108,11 @@ def check_dir():
             remove_file(name)
             del cache[name]
 
-    # on the first run, check for remote files that are not in the current directory and delete them
+    # check for remote files that are not in the current directory and delete them
     if check_dir.first_run and args.initial_sync:
         for name, size in initial_remote_list.items():
-            extension = os.path.splitext(name)[1]
             if name not in cache:
-                if not args.file_extensions or extension in args.file_extensions:
-                    remove_file(name)
+                remove_file(name)
 
     check_dir.first_run = False
 
@@ -122,12 +120,13 @@ def check_dir():
 parser = argparse.ArgumentParser(description='Watch a directory for change/delete events to files and sync to flashair card (not recursive!).')
 parser.add_argument('directory_path', help='The directory to watch for changes.')
 parser.add_argument('flashair_address', help='The address of your flashair card, eg. "192.168.178.41"')
-parser.add_argument('file_extensions', nargs='*', default=None, help='Only files that match one of these extensions get monitored. (optional)')
+parser.add_argument('file_extensions', nargs='+', default=None, help='Only files that match one of these extensions get monitored.')
 parser.add_argument('-p', '--poll_interval', type=float, default=1, help='How many seconds between directory polls (default is 1).')
 parser.add_argument('-i', '--initial_sync', action='store_true', default=False, help='Copy all files that are new or changed to the card on program start, also delete all files on the card which are not in the current directory. Without this switch only files that are new/modified/deleted after the program start are synced.')
 args = parser.parse_args()
 
-args.file_extensions = ['.{}'.format(extension) for extension in args.file_extensions]
+if args.file_extensions is not None:
+    args.file_extensions = ['.{}'.format(extension) for extension in args.file_extensions]
 
 url = 'http://{}'.format(args.flashair_address)
 upload_url = '{}/upload.cgi'.format(url)
