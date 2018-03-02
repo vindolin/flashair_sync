@@ -5,8 +5,8 @@ import os
 import argparse
 from requests_toolbelt.multipart.encoder import MultipartEncoderMonitor
 from tqdm import tqdm
-import shutil
-import tempfile
+
+flush_time = 2  # this delay avoids sending a file that is not yet fully written
 
 try:
     from urllib.parse import quote
@@ -14,6 +14,7 @@ except ImportError:
     from urllib import quote
 
 cache = {}
+upload_schedule = []
 
 
 def progress(bytes_read, pbar):
@@ -23,11 +24,6 @@ def progress(bytes_read, pbar):
 
 
 def send_file(name, size):
-    # if the file is still beeing written, this forces a wait
-    tmp_file = os.path.join(tempfile.gettempdir(), 'flashair_tmp')
-    shutil.copy(os.path.join(args.directory_path, name), tmp_file)
-    os.unlink(tmp_file)
-
     try:
         encoder = MultipartEncoderMonitor.from_fields(
             fields={'file': (name, open(os.path.join(args.directory_path, name), 'rb'))}
@@ -42,7 +38,7 @@ def send_file(name, size):
         if 'Success' not in r.text:
             print(r.text)
         else:
-            print('done.\a')
+            print('done.\a')  # \a = audio signal
 
     except UnicodeDecodeError:
         exit('Oops, unicode filenames are not yet supported, please delete the file "{}" and try again. :('.format(name))
@@ -70,7 +66,7 @@ def remove_file(name):
     if 'SUCCESS' not in r.text:
         print(r.text)
     else:
-        print('done.\a')
+        print('done.\a')  # \a = audio signal
 
 
 def check_dir():
@@ -98,7 +94,7 @@ def check_dir():
 
                 else:
                     # file is new or has changed
-                    if name not in cache or cache[name] != stat.st_mtime:
+                    if name not in cache or cache[name] < stat.st_mtime - flush_time:
                         send_file(name, stat.st_size)
                         cache[name] = stat.st_mtime
 
